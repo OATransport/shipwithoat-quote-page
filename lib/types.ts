@@ -10,6 +10,14 @@ export type AddressSuggestion = {
   longitude?: number;
 };
 
+export type QuoteVehicle = {
+  year: string;
+  make: string;
+  model: string;
+  type: string;
+  running: string;
+};
+
 export type QuotePayload = {
   route: {
     pickupAddress: string;
@@ -17,13 +25,7 @@ export type QuotePayload = {
     pickupStructured?: AddressSuggestion | null;
     deliveryStructured?: AddressSuggestion | null;
   };
-  vehicle: {
-    year: string;
-    make: string;
-    model: string;
-    type: string;
-    running: string;
-  };
+  vehicles: QuoteVehicle[];
   shipment: {
     firstAvailablePickupDate: string;
     pickupFlexibility: string;

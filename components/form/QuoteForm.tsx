@@ -9,16 +9,22 @@ import { AddressSuggestion, QuotePayload } from "@/lib/types";
 import { canonicalizeVehicleMake } from "@/lib/vehicle-data";
 import { cn, formatPhoneNumber } from "@/lib/utils";
 
-type QuoteFormData = {
-  pickupAddress: string;
-  deliveryAddress: string;
-  pickupStructured: AddressSuggestion | null;
-  deliveryStructured: AddressSuggestion | null;
+type VehicleFormEntry = {
   year: string;
   make: string;
   model: string;
   vehicleType: string;
   vehicleRunning: string;
+};
+
+type VehicleErrors = Partial<Record<keyof VehicleFormEntry, string>>;
+
+type QuoteFormData = {
+  pickupAddress: string;
+  deliveryAddress: string;
+  pickupStructured: AddressSuggestion | null;
+  deliveryStructured: AddressSuggestion | null;
+  vehicles: VehicleFormEntry[];
   firstAvailablePickupDate: string;
   pickupFlexibility: string;
   customerType: string;
@@ -30,7 +36,17 @@ type QuoteFormData = {
   attribution: QuotePayload["attribution"];
 };
 
-type ErrorMap = Partial<Record<keyof QuoteFormData, string>>;
+type ErrorMap = Partial<{
+  pickupAddress: string;
+  deliveryAddress: string;
+  firstAvailablePickupDate: string;
+  pickupFlexibility: string;
+  customerType: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  consent: string;
+}>;
 
 const steps = [
   { title: "Route", description: "Pickup and delivery" },
@@ -39,16 +55,22 @@ const steps = [
   { title: "Contact", description: "Where to send the quote" },
 ];
 
+function emptyVehicle(): VehicleFormEntry {
+  return {
+    year: "",
+    make: "",
+    model: "",
+    vehicleType: "",
+    vehicleRunning: "Yes",
+  };
+}
+
 const initialData: QuoteFormData = {
   pickupAddress: "",
   deliveryAddress: "",
   pickupStructured: null,
   deliveryStructured: null,
-  year: "",
-  make: "",
-  model: "",
-  vehicleType: "",
-  vehicleRunning: "Yes",
+  vehicles: [emptyVehicle()],
   firstAvailablePickupDate: "",
   pickupFlexibility: "Flexible",
   customerType: "Individual",
@@ -74,14 +96,20 @@ export function QuoteForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<QuoteFormData>(initialData);
   const [errors, setErrors] = useState<ErrorMap>({});
+  const [vehicleErrors, setVehicleErrors] = useState<VehicleErrors[]>([{}]);
   const [makes, setMakes] = useState<string[]>([]);
-  const [models, setModels] = useState<string[]>([]);
   const [makesLoading, setMakesLoading] = useState(true);
-  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsByIndex, setModelsByIndex] = useState<Record<number, string[]>>({});
+  const [modelsLoadingByIndex, setModelsLoadingByIndex] = useState<Record<number, boolean>>({});
   const [vehicleApiMessage, setVehicleApiMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  const vehicleModelsSignature = useMemo(
+    () => formData.vehicles.map((v, i) => `${i}:${v.year}:${v.make}`).join("¦"),
+    [formData.vehicles],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -144,60 +172,126 @@ export function QuoteForm() {
   }, []);
 
   useEffect(() => {
-    if (!formData.year || !formData.make) {
-      setModels([]);
-      return;
-    }
+    let cancelled = false;
+    const vehicles = formData.vehicles;
+    const count = vehicles.length;
 
-    let active = true;
+    async function loadModelsForAll() {
+      const loading: Record<number, boolean> = {};
+      for (let i = 0; i < count; i++) {
+        const v = vehicles[i];
+        if (v?.year && v?.make) {
+          loading[i] = true;
+        }
+      }
+      setModelsLoadingByIndex(loading);
 
-    async function loadModels() {
-      try {
-        setModelsLoading(true);
-        const response = await fetch(
-          `/api/vehicle/models?year=${encodeURIComponent(formData.year)}&make=${encodeURIComponent(formData.make)}`,
-        );
-        const data = (await response.json()) as { models?: string[]; fallback?: boolean };
+      const nextModels: Record<number, string[]> = {};
+      let anyFallback = false;
+      let anyCatch = false;
 
-        if (!active) {
-          return;
+      for (let i = 0; i < count; i++) {
+        const v = vehicles[i];
+        if (!v?.year || !v?.make) {
+          nextModels[i] = [];
+          continue;
         }
 
-        setModels(data.models ?? []);
-        setVehicleApiMessage(
-          data.fallback
-            ? "Model suggestions are limited for this selection, but you can still enter the exact model."
-            : "",
-        );
-      } catch {
-        if (!active) {
-          return;
-        }
+        try {
+          const response = await fetch(
+            `/api/vehicle/models?year=${encodeURIComponent(v.year)}&make=${encodeURIComponent(v.make)}`,
+          );
+          const data = (await response.json()) as { models?: string[]; fallback?: boolean };
 
-        setModels([]);
+          if (cancelled) {
+            return;
+          }
+
+          nextModels[i] = data.models ?? [];
+          if (data.fallback) {
+            anyFallback = true;
+          }
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          nextModels[i] = [];
+          anyCatch = true;
+        }
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setModelsByIndex(nextModels);
+      setModelsLoadingByIndex({});
+
+      if (anyCatch) {
         setVehicleApiMessage(
           "Model suggestions are temporarily limited, but you can still enter the model manually.",
         );
-      } finally {
-        if (active) {
-          setModelsLoading(false);
-        }
+      } else if (anyFallback) {
+        setVehicleApiMessage(
+          "Model suggestions are limited for one or more selections, but you can still enter the exact model.",
+        );
+      } else {
+        setVehicleApiMessage((prev) =>
+          prev.startsWith("Model suggestions") || prev.includes("enter the model manually")
+            ? ""
+            : prev,
+        );
       }
     }
 
-    loadModels();
+    loadModelsForAll();
 
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [formData.year, formData.make]);
+  }, [vehicleModelsSignature]);
 
   const progress = useMemo(() => (currentStep / steps.length) * 100, [currentStep]);
-  const canSearchModels = Boolean(formData.year && formData.make);
 
   function updateField<K extends keyof QuoteFormData>(key: K, value: QuoteFormData[K]) {
     setFormData((current) => ({ ...current, [key]: value }));
     setErrors((current) => ({ ...current, [key]: undefined }));
+  }
+
+  function updateVehicleField(index: number, key: keyof VehicleFormEntry, value: string) {
+    setFormData((current) => ({
+      ...current,
+      vehicles: current.vehicles.map((v, i) => (i === index ? { ...v, [key]: value } : v)),
+    }));
+    setVehicleErrors((current) =>
+      current.map((e, i) => (i === index ? { ...e, [key]: undefined } : e)),
+    );
+  }
+
+  function addVehicle() {
+    setFormData((current) => ({
+      ...current,
+      vehicles: [...current.vehicles, emptyVehicle()],
+    }));
+    setVehicleErrors((current) => [...current, {}]);
+  }
+
+  function removeVehicle(index: number) {
+    setFormData((current) => {
+      if (current.vehicles.length <= 1) {
+        return current;
+      }
+      return {
+        ...current,
+        vehicles: current.vehicles.filter((_, i) => i !== index),
+      };
+    });
+    setVehicleErrors((current) => {
+      if (current.length <= 1) {
+        return current;
+      }
+      return current.filter((_, i) => i !== index);
+    });
   }
 
   function validateStep(step: number) {
@@ -213,20 +307,29 @@ export function QuoteForm() {
     }
 
     if (step === 2) {
-      if (!formData.year) {
-        nextErrors.year = "Select the vehicle year.";
-      }
-      if (!canonicalizeVehicleMake(formData.make) && !makes.some((make) => make === formData.make)) {
-        nextErrors.make = "Choose the vehicle make from the search suggestions.";
-      }
-      if (!formData.model.trim()) {
-        nextErrors.model = "Enter or select the vehicle model.";
-      }
-      if (!formData.vehicleType) {
-        nextErrors.vehicleType = "Choose the vehicle type.";
-      }
-      if (!formData.vehicleRunning) {
-        nextErrors.vehicleRunning = "Let us know if the vehicle is running.";
+      const ve: VehicleErrors[] = formData.vehicles.map(() => ({}));
+      formData.vehicles.forEach((v, i) => {
+        if (!v.year) {
+          ve[i]!.year = "Select the vehicle year.";
+        }
+        if (!canonicalizeVehicleMake(v.make) && !makes.some((make) => make === v.make)) {
+          ve[i]!.make = "Choose the vehicle make from the search suggestions.";
+        }
+        if (!v.model.trim()) {
+          ve[i]!.model = "Enter or select the vehicle model.";
+        }
+        if (!v.vehicleType) {
+          ve[i]!.vehicleType = "Choose the vehicle type.";
+        }
+        if (!v.vehicleRunning) {
+          ve[i]!.vehicleRunning = "Let us know if the vehicle is running.";
+        }
+      });
+      setVehicleErrors(ve);
+      const hasVehicleIssues = ve.some((row) => Object.keys(row).length > 0);
+      if (hasVehicleIssues) {
+        setErrors(nextErrors);
+        return false;
       }
     }
 
@@ -280,13 +383,13 @@ export function QuoteForm() {
         pickupStructured: formData.pickupStructured,
         deliveryStructured: formData.deliveryStructured,
       },
-      vehicle: {
-        year: formData.year,
-        make: formData.make,
-        model: formData.model,
-        type: formData.vehicleType,
-        running: formData.vehicleRunning,
-      },
+      vehicles: formData.vehicles.map((v) => ({
+        year: v.year,
+        make: v.make,
+        model: v.model,
+        type: v.vehicleType,
+        running: v.vehicleRunning,
+      })),
       shipment: {
         firstAvailablePickupDate: formData.firstAvailablePickupDate,
         pickupFlexibility: formData.pickupFlexibility,
@@ -324,6 +427,7 @@ export function QuoteForm() {
         ...initialData,
         attribution: currentAttribution,
       });
+      setVehicleErrors([{}]);
       setCurrentStep(1);
       setErrors({});
     } catch {
@@ -340,11 +444,11 @@ export function QuoteForm() {
       return;
     }
 
-    setCurrentStep((step) => Math.min(steps.length, step + 1));
+    setCurrentStep((s) => Math.min(steps.length, s + 1));
   }
 
   function handleBack() {
-    setCurrentStep((step) => Math.max(1, step - 1));
+    setCurrentStep((s) => Math.max(1, s - 1));
   }
 
   return (
@@ -392,7 +496,10 @@ export function QuoteForm() {
             <button
               type="button"
               className="primary-button mt-8"
-              onClick={() => setSubmitted(false)}
+              onClick={() => {
+                setSubmitted(false);
+                setVehicleErrors([{}]);
+              }}
             >
               Start another request
             </button>
@@ -425,127 +532,167 @@ export function QuoteForm() {
             ) : null}
 
             {currentStep === 2 ? (
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="year" className="field-label">
-                    Vehicle year
-                  </label>
-                  <select
-                    id="year"
-                    className={cn("input-base", errors.year && "border-red-300")}
-                    value={formData.year}
-                    onChange={(event) => {
-                      updateField("year", event.target.value);
-                      updateField("model", "");
-                    }}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.year ? <p className="error-text mt-2">{errors.year}</p> : null}
-                </div>
+              <div className="flex flex-col gap-6">
+                {formData.vehicles.map((vehicle, index) => {
+                  const errs = vehicleErrors[index] ?? {};
+                  const canSearchModels = Boolean(vehicle.year && vehicle.make);
+                  const models = modelsByIndex[index] ?? [];
+                  const modelsLoading = Boolean(modelsLoadingByIndex[index]);
 
-                <SearchAutocomplete
-                  id="make"
-                  label="Vehicle make"
-                  placeholder={makesLoading ? "Loading makes..." : "Start typing make"}
-                  value={formData.make}
-                  suggestions={makes}
-                  loading={makesLoading}
-                  onChange={(value) => {
-                    updateField("make", value);
-                    updateField("model", "");
-                  }}
-                  onSelect={(value) => {
-                    updateField("make", value);
-                    updateField("model", "");
-                  }}
-                  error={errors.make}
-                  emptyMessage="Keep typing to find the correct make."
-                  allowCustomValue={false}
-                  minQueryLength={1}
-                />
+                  return (
+                    <div
+                      key={`vehicle-${index}`}
+                      className="rounded-[1.5rem] border border-slate-200/80 bg-white/50 p-5 sm:p-6"
+                    >
+                      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                        <p className="field-label !mb-0">
+                          Vehicle {index + 1}
+                          {formData.vehicles.length > 1 ? ` of ${formData.vehicles.length}` : ""}
+                        </p>
+                        {formData.vehicles.length > 1 ? (
+                          <button
+                            type="button"
+                            className="text-sm font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-slate-900"
+                            onClick={() => removeVehicle(index)}
+                          >
+                            Remove vehicle
+                          </button>
+                        ) : null}
+                      </div>
 
-                <SearchAutocomplete
-                  id="model"
-                  label="Vehicle model"
-                  placeholder={canSearchModels ? "Start typing model" : "Select year and make first"}
-                  value={formData.model}
-                  suggestions={models}
-                  loading={modelsLoading}
-                  disabled={!canSearchModels}
-                  onChange={(value) => updateField("model", value)}
-                  onSelect={(value) => updateField("model", value)}
-                  error={errors.model}
-                  helperText={
-                    canSearchModels
-                      ? "If the exact model does not appear, you can enter it directly."
-                      : "Choose the year and make first to unlock model suggestions."
-                  }
-                  emptyMessage="No close match found yet. You can keep typing the exact model."
-                  allowCustomValue
-                  minQueryLength={1}
-                />
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label htmlFor={`vehicle-${index}-year`} className="field-label">
+                            Vehicle year
+                          </label>
+                          <select
+                            id={`vehicle-${index}-year`}
+                            className={cn("input-base", errs.year && "border-red-300")}
+                            value={vehicle.year}
+                            onChange={(event) => {
+                              updateVehicleField(index, "year", event.target.value);
+                              updateVehicleField(index, "model", "");
+                            }}
+                          >
+                            <option value="">Select year</option>
+                            {years.map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
+                          {errs.year ? <p className="error-text mt-2">{errs.year}</p> : null}
+                        </div>
 
-                <div>
-                  <label htmlFor="vehicleType" className="field-label">
-                    Vehicle type
-                  </label>
-                  <select
-                    id="vehicleType"
-                    className={cn("input-base", errors.vehicleType && "border-red-300")}
-                    value={formData.vehicleType}
-                    onChange={(event) => updateField("vehicleType", event.target.value)}
-                  >
-                    <option value="">Select type</option>
-                    {vehicleTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.vehicleType ? (
-                    <p className="error-text mt-2">{errors.vehicleType}</p>
-                  ) : null}
-                </div>
+                        <SearchAutocomplete
+                          id={`vehicle-${index}-make`}
+                          label="Vehicle make"
+                          placeholder={makesLoading ? "Loading makes..." : "Start typing make"}
+                          value={vehicle.make}
+                          suggestions={makes}
+                          loading={makesLoading}
+                          onChange={(value) => {
+                            updateVehicleField(index, "make", value);
+                            updateVehicleField(index, "model", "");
+                          }}
+                          onSelect={(value) => {
+                            updateVehicleField(index, "make", value);
+                            updateVehicleField(index, "model", "");
+                          }}
+                          error={errs.make}
+                          emptyMessage="Keep typing to find the correct make."
+                          allowCustomValue={false}
+                          minQueryLength={1}
+                        />
 
-                <div className="sm:col-span-2">
-                  <fieldset>
-                    <legend className="field-label">Is the vehicle running?</legend>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {runningOptions.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          className={cn(
-                            "rounded-[1.1rem] border px-4 py-4 text-left transition-colors",
-                            formData.vehicleRunning === option
-                              ? "border-blue-700 bg-blue-50 text-slate-950 shadow-sm shadow-blue-900/5"
-                              : "border-slate-200 bg-white text-slate-600",
-                          )}
-                          onClick={() => updateField("vehicleRunning", option)}
-                        >
-                          <span className="block text-sm font-semibold">{option}</span>
-                          <span className="mt-1 block text-sm text-slate-500">
-                            {option === "Yes"
-                              ? "Standard loading and unloading"
-                              : "We can account for special equipment needs"}
-                          </span>
-                        </button>
-                      ))}
+                        <SearchAutocomplete
+                          id={`vehicle-${index}-model`}
+                          label="Vehicle model"
+                          placeholder={
+                            canSearchModels ? "Start typing model" : "Select year and make first"
+                          }
+                          value={vehicle.model}
+                          suggestions={models}
+                          loading={modelsLoading}
+                          disabled={!canSearchModels}
+                          onChange={(value) => updateVehicleField(index, "model", value)}
+                          onSelect={(value) => updateVehicleField(index, "model", value)}
+                          error={errs.model}
+                          helperText={
+                            canSearchModels
+                              ? "If the exact model does not appear, you can enter it directly."
+                              : "Choose the year and make first to unlock model suggestions."
+                          }
+                          emptyMessage="No close match found yet. You can keep typing the exact model."
+                          allowCustomValue
+                          minQueryLength={1}
+                        />
+
+                        <div>
+                          <label htmlFor={`vehicle-${index}-type`} className="field-label">
+                            Vehicle type
+                          </label>
+                          <select
+                            id={`vehicle-${index}-type`}
+                            className={cn("input-base", errs.vehicleType && "border-red-300")}
+                            value={vehicle.vehicleType}
+                            onChange={(event) =>
+                              updateVehicleField(index, "vehicleType", event.target.value)
+                            }
+                          >
+                            <option value="">Select type</option>
+                            {vehicleTypes.map((type) => (
+                              <option key={type} value={type}>
+                                {type}
+                              </option>
+                            ))}
+                          </select>
+                          {errs.vehicleType ? (
+                            <p className="error-text mt-2">{errs.vehicleType}</p>
+                          ) : null}
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <fieldset>
+                            <legend className="field-label">Is the vehicle running?</legend>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {runningOptions.map((option) => (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  className={cn(
+                                    "rounded-[1.1rem] border px-4 py-4 text-left transition-colors",
+                                    vehicle.vehicleRunning === option
+                                      ? "border-blue-700 bg-blue-50 text-slate-950 shadow-sm shadow-blue-900/5"
+                                      : "border-slate-200 bg-white text-slate-600",
+                                  )}
+                                  onClick={() => updateVehicleField(index, "vehicleRunning", option)}
+                                >
+                                  <span className="block text-sm font-semibold">{option}</span>
+                                  <span className="mt-1 block text-sm text-slate-500">
+                                    {option === "Yes"
+                                      ? "Standard loading and unloading"
+                                      : "We can account for special equipment needs"}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </fieldset>
+                          {errs.vehicleRunning ? (
+                            <p className="error-text mt-2">{errs.vehicleRunning}</p>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                  </fieldset>
-                  {errors.vehicleRunning ? (
-                    <p className="error-text mt-2">{errors.vehicleRunning}</p>
-                  ) : null}
-                </div>
+                  );
+                })}
+
+                <button type="button" className="secondary-button w-full sm:w-auto" onClick={addVehicle}>
+                  Add Another Vehicle
+                </button>
 
                 {vehicleApiMessage ? (
-                  <div className="sm:col-span-2 rounded-[1.2rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                  <div className="rounded-[1.2rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                     {vehicleApiMessage}
                   </div>
                 ) : null}

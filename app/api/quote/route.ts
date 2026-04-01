@@ -17,6 +17,14 @@ const structuredAddressSchema = z
   .nullable()
   .optional();
 
+const vehicleSchema = z.object({
+  year: z.string().min(1),
+  make: z.string().min(1),
+  model: z.string().min(1),
+  type: z.string().min(1),
+  running: z.string().min(1),
+});
+
 const quoteSchema = z.object({
   route: z.object({
     pickupAddress: z.string().min(3),
@@ -24,13 +32,7 @@ const quoteSchema = z.object({
     pickupStructured: structuredAddressSchema,
     deliveryStructured: structuredAddressSchema,
   }),
-  vehicle: z.object({
-    year: z.string().min(1),
-    make: z.string().min(1),
-    model: z.string().min(1),
-    type: z.string().min(1),
-    running: z.string().min(1),
-  }),
+  vehicles: z.array(vehicleSchema).min(1),
   shipment: z.object({
     firstAvailablePickupDate: z.string().min(1),
     pickupFlexibility: z.string().min(1),

@@ -95,11 +95,11 @@ The browser POSTs a nested JSON body to `/api/quote`. The route validates it wit
 - If `GHL_WEBHOOK_URL` is set, the server POSTs a **flat** JSON object to that webhook (built in `lib/ghl-payload.ts`).
 - If not set, the server logs that flat shape for local debugging.
 
-**Client → `/api/quote` (nested)** — same shape the `QuoteForm` sends today (`route`, `vehicle`, `shipment`, `contact`, `attribution`).
+**Client → `/api/quote` (nested)** — `route`, **`vehicles`** (array of `{ year, make, model, type, running }`, min 1), `shipment`, `contact`, `attribution`.
 
 **Server → GoHighLevel webhook (flat)** — field keys:
 
-`firstName`, `lastName`, `fullName`, `email`, `phone`, `pickupAddress`, `pickupCity`, `pickupState`, `pickupZip`, `deliveryAddress`, `deliveryCity`, `deliveryState`, `deliveryZip`, `vehicleYear`, `vehicleMake`, `vehicleModel`, `vehicleType`, `vehicleRunning`, `pickupDate`, `pickupFlexibility`, `customerType`, `shipmentNotes`, `landing_page_url`, `utm_source`, `utm_medium`, `utm_campaign`
+`firstName`, `lastName`, `fullName`, `email`, `phone`, `pickupAddress`, `pickupCity`, `pickupState`, `pickupZip`, `deliveryAddress`, `deliveryCity`, `deliveryState`, `deliveryZip`, `vehicleYear`, `vehicleMake`, `vehicleModel`, `vehicleType`, `vehicleRunning` (first vehicle only), `vehicleCount`, `vehiclesSummary`, `pickupDate`, `pickupFlexibility`, `customerType`, `shipmentNotes`, `landing_page_url`, `utm_source`, `utm_medium`, `utm_campaign`
 
 City, state, and ZIP are taken from structured address objects when the user picks a suggestion; otherwise those fields are empty strings while line addresses still contain what the user typed.
 
