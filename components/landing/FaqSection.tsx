@@ -35,7 +35,7 @@ export function FaqSection() {
       <div className="mt-12 grid gap-4 md:grid-cols-2">
         {faqs.map((faq) => (
           <article key={faq.question} className="card-surface rounded-[1.75rem] p-6 sm:p-7">
-            <h3 className="text-lg font-semibold text-slate-900">{faq.question}</h3>
+            <h3 className="text-lg font-semibold text-slate-950">{faq.question}</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">{faq.answer}</p>
           </article>
         ))}

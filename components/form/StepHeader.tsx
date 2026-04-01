@@ -7,7 +7,7 @@ type StepHeaderProps = {
 
 export function StepHeader({ currentStep, steps }: StepHeaderProps) {
   return (
-    <div className="rounded-[1.5rem] bg-slate-50/70 px-4 py-4 sm:px-5">
+    <div className="rounded-[1.5rem] border border-slate-200/60 bg-slate-100/50 px-4 py-4 sm:px-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">

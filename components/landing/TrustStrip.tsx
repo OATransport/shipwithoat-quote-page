@@ -24,7 +24,7 @@ export function TrustStrip() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {items.map((item) => (
             <div key={item.title} className="rounded-[1.5rem] bg-white/60 p-5">
-              <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
+              <h3 className="text-base font-semibold text-slate-950">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </div>
           ))}

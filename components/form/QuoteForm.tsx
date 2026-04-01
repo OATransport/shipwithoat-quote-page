@@ -356,10 +356,10 @@ export function QuoteForm() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-700">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-800">
                 Quote Request
               </p>
-              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-tight text-slate-900 sm:text-[2.15rem]">
+              <h2 className="mt-2 text-[1.9rem] font-semibold tracking-tight text-slate-950 sm:text-[2.15rem]">
                 Request pricing and availability
               </h2>
             </div>
@@ -367,9 +367,9 @@ export function QuoteForm() {
               {currentStep} / {steps.length}
             </p>
           </div>
-          <div className="h-1.5 rounded-full bg-slate-100">
+          <div className="h-1.5 rounded-full bg-slate-200/80">
             <div
-              className="h-1.5 rounded-full bg-gradient-to-r from-teal-600 to-teal-700 transition-all duration-200"
+              className="progress-bar-fill h-1.5 transition-all duration-200"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -378,11 +378,11 @@ export function QuoteForm() {
         <StepHeader currentStep={currentStep} steps={steps} />
 
         {submitted ? (
-          <div className="fade-slide rounded-[1.75rem] bg-teal-50 p-6 sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">
+          <div className="form-success-panel fade-slide rounded-[1.75rem] p-6 sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-blue-800">
               Request received
             </p>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-900">
+            <h3 className="mt-3 text-2xl font-semibold text-slate-950">
               Your quote request is on its way to Organized Auto Transport
             </h3>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-700">
@@ -524,7 +524,7 @@ export function QuoteForm() {
                           className={cn(
                             "rounded-[1.1rem] border px-4 py-4 text-left transition-colors",
                             formData.vehicleRunning === option
-                              ? "border-teal-600 bg-teal-50 text-slate-900"
+                              ? "border-blue-700 bg-blue-50 text-slate-950 shadow-sm shadow-blue-900/5"
                               : "border-slate-200 bg-white text-slate-600",
                           )}
                           onClick={() => updateField("vehicleRunning", option)}
@@ -689,7 +689,7 @@ export function QuoteForm() {
                       type="checkbox"
                       checked={formData.consent}
                       onChange={(event) => updateField("consent", event.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-700"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-2 focus:ring-blue-600 focus:ring-offset-0"
                     />
                     <span className="text-sm leading-6 text-slate-600">
                       I agree to be contacted by Organized Auto Transport about this quote request.
