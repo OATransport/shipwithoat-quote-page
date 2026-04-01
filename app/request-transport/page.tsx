@@ -13,30 +13,30 @@ export default function RequestTransportPage() {
             Premium vehicle transport quote request
           </div>
           <h1 className="mt-6 max-w-lg text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-[3.35rem] lg:leading-[1.05]">
-            Get a transport quote through a cleaner, more organized process
+            Request Your Vehicle Transport Quote
           </h1>
           <p className="mt-5 max-w-md text-lg leading-8 text-slate-600">
-            Share the route, vehicle, and timing details that matter. Organized Auto Transport can
-            review your request and respond with pricing and availability.
+            Share your route, vehicle, and timing details to receive pricing and availability from
+            Organized Auto Transport.
           </p>
 
           <div className="mt-8 space-y-3">
             <div className="flex items-start gap-3">
               <span className="mt-2 h-2 w-2 rounded-full bg-blue-700" aria-hidden />
               <p className="text-sm leading-6 text-slate-600">
-                U.S. pickup and delivery inputs with polished address suggestions.
+                U.S. vehicle transport with direct support
               </p>
             </div>
             <div className="flex items-start gap-3">
               <span className="mt-2 h-2 w-2 rounded-full bg-blue-700" aria-hidden />
               <p className="text-sm leading-6 text-slate-600">
-                Searchable vehicle make and model lookup for a faster quote flow.
+                Clean quote request with no obligation to book
               </p>
             </div>
             <div className="flex items-start gap-3">
               <span className="mt-2 h-2 w-2 rounded-full bg-blue-700" aria-hidden />
               <p className="text-sm leading-6 text-slate-600">
-                No-obligation request with direct follow-up from the transport team.
+                Fast follow-up on pricing and availability
               </p>
             </div>
           </div>

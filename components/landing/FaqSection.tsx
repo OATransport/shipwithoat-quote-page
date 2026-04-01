@@ -2,6 +2,11 @@ import { SectionIntro } from "@/components/ui/SectionIntro";
 
 const faqs = [
   {
+    question: "What happens after I submit my request?",
+    answer:
+      "Once you submit your route and vehicle details, Organized Auto Transport reviews the request and follows up with pricing, availability, and next steps.",
+  },
+  {
     question: "How quickly will I hear back?",
     answer:
       "Most requests receive a response quickly during business hours, with pricing and availability based on your route details.",

@@ -1,19 +1,23 @@
 const items = [
   {
-    title: "Fast responses",
-    description: "Quote requests are reviewed quickly so you can plan with confidence.",
+    title: "Fast Responses",
+    description:
+      "We review quote requests quickly so you can move forward with pricing and timing.",
   },
   {
-    title: "Direct support",
-    description: "Clear communication from a real transport team, not a maze of handoffs.",
+    title: "Direct Support",
+    description:
+      "You’ll hear from Organized Auto Transport directly with clear next steps.",
   },
   {
-    title: "Reliable transport",
-    description: "Built for straightforward scheduling, dependable routing, and smooth delivery.",
+    title: "Open Carrier Transport",
+    description:
+      "Built for straightforward vehicle shipping with practical, dependable transport planning.",
   },
   {
-    title: "Clear communication",
-    description: "We keep details organized so pickup timing and expectations stay easy to follow.",
+    title: "Clear Scheduling",
+    description:
+      "Pickup timing, route details, and expectations are kept simple and easy to follow.",
   },
 ];
 

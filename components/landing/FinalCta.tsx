@@ -6,14 +6,14 @@ export function FinalCta() {
           No obligation
         </p>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-          Requesting a quote is simple, fast, and pressure-free
+          Ready to Request Pricing and Availability?
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-          Share the route, vehicle, and timing details that matter. Organized Auto Transport can
-          review your request and send back pricing with availability.
+          Send your route, vehicle, and timing details now. Organized Auto Transport will review
+          your request and follow up with pricing and next steps.
         </p>
         <a href="#quote-form" className="primary-button mt-8">
-          Start your quote
+          Request your quote
         </a>
       </div>
     </section>
