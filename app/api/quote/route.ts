@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { buildGoHighLevelPayload } from "@/lib/ghl-payload";
 
 const structuredAddressSchema = z
   .object({
@@ -71,25 +72,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = {
-      source: "organized-auto-transport-quote-page",
-      receivedAt: new Date().toISOString(),
-      ...parsed.data,
-    };
-
-    const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL;
+    const ghlBody = buildGoHighLevelPayload(parsed.data);
+    const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL?.trim();
 
     if (ghlWebhookUrl) {
-      // Future GoHighLevel connection point:
-      // 1. Set GHL_WEBHOOK_URL in Vercel.
-      // 2. Map this payload shape directly inside a GHL workflow or webhook endpoint.
-      // 3. Add any contact or opportunity field transforms there as needed.
       const webhookResponse = await fetch(ghlWebhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(ghlBody),
       });
 
       if (!webhookResponse.ok) {
@@ -102,10 +94,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Local/dev fallback:
-      // This keeps the route deployable without secrets while preserving the final payload
-      // shape that can later be forwarded to GoHighLevel or another CRM/backend.
-      console.log("Quote request payload", JSON.stringify(payload, null, 2));
+      console.log("GHL_WEBHOOK_URL not set; quote payload (GoHighLevel shape):", JSON.stringify(ghlBody, null, 2));
     }
 
     return NextResponse.json({

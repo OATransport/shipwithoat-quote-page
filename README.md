@@ -9,7 +9,7 @@ Standalone premium vehicle transport quote page for Organized Auto Transport, bu
 - Multi-step quote form with inline validation and polished success state
 - Dynamic vehicle make/model loading from the free NHTSA vPIC API
 - Free-tier U.S.-only address autocomplete via Nominatim with graceful manual-entry fallback
-- Internal submission handler ready for future GoHighLevel webhook/API connection
+- Quote submissions validated in `/api/quote` and forwarded to GoHighLevel when `GHL_WEBHOOK_URL` is set
 - Hidden attribution capture for UTM values, `gclid`, `fbclid`, referrer, and landing page URL
 - SEO-ready metadata, canonical support, Open Graph defaults, and semantic structure
 
@@ -56,9 +56,9 @@ Use `.env.local` for local development and Vercel project settings for productio
   - Production example: `https://quotes.shipwithoat.com`
 
 - `GHL_WEBHOOK_URL`
-  - Optional.
-  - When set, `/api/quote` forwards the structured payload to this webhook.
-  - Leave blank during local development.
+  - GoHighLevel (Lead Connector) inbound webhook URL.
+  - When set, `/api/quote` POSTs a **flat** JSON body mapped for CRM workflows (see below).
+  - Omit or leave empty to skip the webhook (payload is logged server-side for debugging).
 
 - `NOMINATIM_API_URL`
   - Optional.
@@ -90,69 +90,23 @@ Use `.env.local` for local development and Vercel project settings for productio
 
 ## Quote submission architecture
 
-Form submissions go to:
+The browser POSTs a nested JSON body to `/api/quote`. The route validates it with Zod, then:
 
-```text
-/api/quote
-```
+- If `GHL_WEBHOOK_URL` is set, the server POSTs a **flat** JSON object to that webhook (built in `lib/ghl-payload.ts`).
+- If not set, the server logs that flat shape for local debugging.
 
-The payload is structured like this:
+**Client → `/api/quote` (nested)** — same shape the `QuoteForm` sends today (`route`, `vehicle`, `shipment`, `contact`, `attribution`).
 
-```json
-{
-  "route": {
-    "pickupAddress": "string",
-    "deliveryAddress": "string",
-    "pickupStructured": {},
-    "deliveryStructured": {}
-  },
-  "vehicle": {
-    "year": "string",
-    "make": "string",
-    "model": "string",
-    "type": "string",
-    "running": "Yes | No"
-  },
-  "shipment": {
-    "firstAvailablePickupDate": "YYYY-MM-DD",
-    "pickupFlexibility": "Flexible | Within 1 Week | ASAP",
-    "customerType": "Individual | Dealer | Auction | Broker | Other",
-    "notes": "string"
-  },
-  "contact": {
-    "fullName": "string",
-    "phone": "string",
-    "email": "string",
-    "consent": true
-  },
-  "attribution": {
-    "utm_source": "string",
-    "utm_medium": "string",
-    "utm_campaign": "string",
-    "utm_term": "string",
-    "utm_content": "string",
-    "gclid": "string",
-    "fbclid": "string",
-    "referrer": "string",
-    "landing_page_url": "string"
-  }
-}
-```
+**Server → GoHighLevel webhook (flat)** — field keys:
 
-### Where to connect GoHighLevel later
+`firstName`, `lastName`, `fullName`, `email`, `phone`, `pickupAddress`, `pickupCity`, `pickupState`, `pickupZip`, `deliveryAddress`, `deliveryCity`, `deliveryState`, `deliveryZip`, `vehicleYear`, `vehicleMake`, `vehicleModel`, `vehicleType`, `vehicleRunning`, `pickupDate`, `pickupFlexibility`, `customerType`, `shipmentNotes`, `landing_page_url`, `utm_source`, `utm_medium`, `utm_campaign`
 
-Use `app/api/quote/route.ts`.
+City, state, and ZIP are taken from structured address objects when the user picks a suggestion; otherwise those fields are empty strings while line addresses still contain what the user typed.
 
-- If `GHL_WEBHOOK_URL` is set, the route forwards the payload directly to that webhook.
-- If it is not set, the route logs the payload during development.
-- This makes local testing easy while preserving the final production payload shape.
+### GoHighLevel setup
 
-Typical GoHighLevel setup:
-
-1. Create an inbound webhook in GoHighLevel or a lightweight middleware endpoint.
-2. Add the webhook URL to `GHL_WEBHOOK_URL`.
-3. Map `contact`, `vehicle`, `shipment`, `route`, and `attribution` fields into the desired contact/opportunity/custom fields.
-4. Optionally enrich with tags like `source=quote-landing-page`.
+1. Inbound webhook URL goes in `GHL_WEBHOOK_URL` (see `.env.example`).
+2. In your GHL workflow, map the flat keys above to contact and custom fields.
 
 ## Deployment to Vercel
 
@@ -161,7 +115,7 @@ Typical GoHighLevel setup:
 3. Set the framework preset to Next.js if Vercel does not detect it automatically.
 4. Add production environment variables:
    - `NEXT_PUBLIC_SITE_URL`
-   - `GHL_WEBHOOK_URL` if ready
+   - `GHL_WEBHOOK_URL` (production webhook URL)
    - optional Photon settings if desired
 5. Deploy.
 
