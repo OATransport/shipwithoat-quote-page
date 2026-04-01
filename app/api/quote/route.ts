@@ -43,7 +43,7 @@ const quoteSchema = z.object({
     fullName: z.string().min(2),
     phone: z.string().min(10),
     email: z.string().email(),
-    consent: z.literal(true),
+    smsConsent: z.boolean(),
   }),
   attribution: z.object({
     utm_source: z.string(),

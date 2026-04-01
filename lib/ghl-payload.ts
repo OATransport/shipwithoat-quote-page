@@ -45,6 +45,7 @@ export function buildGoHighLevelPayload(data: QuotePayload): Record<string, stri
     fullName: data.contact.fullName.trim(),
     email: data.contact.email,
     phone: data.contact.phone,
+    smsConsent: data.contact.smsConsent ? "Yes" : "No",
     pickupAddress: data.route.pickupAddress,
     pickupCity: data.route.pickupStructured?.city ?? "",
     pickupState: data.route.pickupStructured?.state ?? "",

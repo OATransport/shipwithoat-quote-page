@@ -32,7 +32,7 @@ type QuoteFormData = {
   fullName: string;
   phone: string;
   email: string;
-  consent: boolean;
+  smsConsent: boolean;
   attribution: QuotePayload["attribution"];
 };
 
@@ -45,7 +45,6 @@ type ErrorMap = Partial<{
   fullName: string;
   phone: string;
   email: string;
-  consent: string;
 }>;
 
 const steps = [
@@ -78,7 +77,7 @@ const initialData: QuoteFormData = {
   fullName: "",
   phone: "",
   email: "",
-  consent: false,
+  smsConsent: false,
   attribution: {
     utm_source: "",
     utm_medium: "",
@@ -360,9 +359,6 @@ export function QuoteForm() {
         nextErrors.email = "Enter a valid email address.";
       }
 
-      if (!formData.consent) {
-        nextErrors.consent = "Please confirm that we can contact you about your quote.";
-      }
     }
 
     setErrors(nextErrors);
@@ -400,7 +396,7 @@ export function QuoteForm() {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email,
-        consent: formData.consent,
+        smsConsent: formData.smsConsent,
       },
       attribution: formData.attribution,
     };
@@ -834,15 +830,38 @@ export function QuoteForm() {
                   <label className="flex items-start gap-3">
                     <input
                       type="checkbox"
-                      checked={formData.consent}
-                      onChange={(event) => updateField("consent", event.target.checked)}
+                      checked={formData.smsConsent}
+                      onChange={(event) => updateField("smsConsent", event.target.checked)}
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-2 focus:ring-blue-600 focus:ring-offset-0"
                     />
                     <span className="text-sm leading-6 text-slate-600">
-                      I agree to be contacted by Organized Auto Transport about this quote request.
+                      I consent to receive non-marketing text messages from Organized Auto
+                      Transport about my quote request, pricing follow-up, and transport updates.
+                      Message frequency may vary. Message & data rates may apply. Text HELP for
+                      assistance, reply STOP to opt out.
                     </span>
                   </label>
-                  {errors.consent ? <p className="error-text mt-2">{errors.consent}</p> : null}
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    By submitting this form, you agree to our{" "}
+                    <a
+                      href="/privacy-policy"
+                      className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Privacy Policy
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="/terms-and-conditions"
+                      className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Terms & Conditions
+                    </a>
+                    .
+                  </p>
                 </div>
               </div>
             ) : null}

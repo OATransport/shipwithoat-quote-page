@@ -36,7 +36,7 @@ export type QuotePayload = {
     fullName: string;
     phone: string;
     email: string;
-    consent: boolean;
+    smsConsent: boolean;
   };
   attribution: {
     utm_source: string;
