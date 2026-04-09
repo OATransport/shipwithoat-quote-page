@@ -529,9 +529,10 @@ export function QuoteForm() {
                 />
                 <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 sm:px-5">
                   <p className="text-sm leading-6 text-slate-600">
-                    By submitting this request, you may receive non-marketing text messages related
-                    to your quote and transport updates. Message frequency may vary. Message &
-                    data rates may apply. View our{" "}
+                    By submitting this quote request to Organized Auto Transport LLC, you may
+                    receive non-marketing text messages related to your quote, pricing follow-up,
+                    and transport updates. Message frequency may vary. Message & data rates may
+                    apply. Reply STOP to opt out. View our{" "}
                     <a
                       href={PRIVACY_POLICY_URL}
                       className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
@@ -864,9 +865,9 @@ export function QuoteForm() {
                     />
                     <span className="text-sm leading-6 text-slate-600">
                       I consent to receive non-marketing text messages from Organized Auto
-                      Transport about my quote request, pricing follow-up, and transport updates.
-                      Message frequency may vary. Message & data rates may apply. Text HELP for
-                      assistance, reply STOP to opt out. Consent is not a condition of purchase.
+                      Transport LLC about my quote request, pricing follow-up, and transport
+                      updates. Message frequency may vary. Message & data rates may apply. Text
+                      HELP for help. Reply STOP to opt out. Consent is not a condition of purchase.
                     </span>
                   </label>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
