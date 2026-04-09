@@ -54,6 +54,9 @@ const steps = [
   { title: "Contact", description: "Where to send the quote" },
 ];
 
+const PRIVACY_POLICY_URL = "https://www.shipwithoat.com/privacy-policy";
+const TERMS_URL = "https://www.shipwithoat.com/terms-and-conditions";
+
 function emptyVehicle(): VehicleFormEntry {
   return {
     year: "",
@@ -524,6 +527,31 @@ export function QuoteForm() {
                   error={errors.deliveryAddress}
                   helperText="A street address, city/state, or ZIP is enough to start your quote."
                 />
+                <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/80 px-4 py-4 sm:px-5">
+                  <p className="text-sm leading-6 text-slate-600">
+                    By submitting this request, you may receive non-marketing text messages related
+                    to your quote and transport updates. Message frequency may vary. Message &
+                    data rates may apply. View our{" "}
+                    <a
+                      href={PRIVACY_POLICY_URL}
+                      className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Privacy Policy
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href={TERMS_URL}
+                      className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Terms & Conditions
+                    </a>
+                    .
+                  </p>
+                </div>
               </div>
             ) : null}
 
@@ -838,13 +866,13 @@ export function QuoteForm() {
                       I consent to receive non-marketing text messages from Organized Auto
                       Transport about my quote request, pricing follow-up, and transport updates.
                       Message frequency may vary. Message & data rates may apply. Text HELP for
-                      assistance, reply STOP to opt out.
+                      assistance, reply STOP to opt out. Consent is not a condition of purchase.
                     </span>
                   </label>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
                     By submitting this form, you agree to our{" "}
                     <a
-                      href="/privacy-policy"
+                      href={PRIVACY_POLICY_URL}
                       className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
                       target="_blank"
                       rel="noreferrer"
@@ -853,7 +881,7 @@ export function QuoteForm() {
                     </a>{" "}
                     and{" "}
                     <a
-                      href="/terms-and-conditions"
+                      href={TERMS_URL}
                       className="font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
                       target="_blank"
                       rel="noreferrer"
